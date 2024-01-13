@@ -23,8 +23,8 @@ jobs:
           
       - name: Pull files
         run: |
-          git config --local user.email "murongpig@foxmail.com"
-          git config --local user.name "MuRongPIG"
+          git config --local user.email "zhbjzhql@qq.com"
+          git config --local user.name "zhbjzhql1"
           git pull origin main
       
       - name: Get proxies
