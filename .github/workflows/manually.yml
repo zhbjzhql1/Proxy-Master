@@ -82,5 +82,5 @@ jobs:
           github_token: ${{ secrets. TOKEN_GITHUB }}
           branch: main 
           force: true
-       env:
+        env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
