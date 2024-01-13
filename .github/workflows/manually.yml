@@ -1,86 +1,39 @@
-name: Update China IP list and generate GeoIP2 database
+name: get proxy(Manually)
 
 on:
-  push:
-    branches: [ master ]
-  
-  workflow_dispatch:
-
-  schedule: 
-    - cron:  '0 2 */3 * *'
+   workflow_dispatch
 
 jobs:
   build:
-    name: Generate GeoIP2 database
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repo content
+        uses: actions/checkout@v2 
+    
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.10'
+          
+      - name: Install python packages
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+ 
+      - name: Get proxies
+        run: python getproxy.py
 
-    - name: Set up Go 1.x
-      uses: actions/setup-go@v2
-      with:
-        go-version: ^1.14
-      id: go
-
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v2
-
-    - name: Get dependencies
-      run: |
-        go get -v -t -d ./...
-        if [ -f Gopkg.toml ]; then
-            curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-            dep ensure
-        fi
-    - name: Create dist folder
-      run: mkdir -p dist
-
-    - name: Compile GeoIP conversion bin (Golang)
-      run: ./build.sh
-
-    - name: Obtain CN IP lists
-      run: |
-        curl -LR -o dist/ipip_net.txt "https://raw.githubusercontent.com/17mon/china_ip_list/master/china_ip_list.txt"
-        curl -LR -o dist/chunzhen.txt "https://raw.githubusercontent.com/metowolf/iplist/master/data/country/CN.txt"
-
-    - name: Merge and IP lists and remove duplicates
-      run: |
-        awk 'FNR==1{print ""}{print}' dist/*.txt > dist/merge.txt
-        awk '!seen[$0]++' dist/merge.txt > dist/CN-ip-cidr.txt
-
-    - name: Generate GeoIP2 database
-      run: |
-        CURRENT_DIR=$(pwd)
-        cd dist
-        ./ipip2mmdb -s ./CN-ip-cidr.txt -d Country.mmdb
-        cd $CURRENT_DIR
-
-    - name: Push artifacts to release branch
-      run: |
-        git config --local user.email "10215166+Hackl0us@users.noreply.github.com"
-        git config --local user.name "github-action[bot]"
-
-        git fetch
-        git checkout release
-
-        git checkout --orphan release-orphan
-        git rm -rf .
-
-        cp -rf dist/CN-ip-cidr.txt ./
-        cp -rf dist/Country.mmdb ./
-
-        git add Country.mmdb
-        git add CN-ip-cidr.txt
-        git commit -am "Updated at $(date)"
-
-        git branch -D release
-        git branch -m release
-            
-    - name: GitHub Push
-      uses: ad-m/github-push-action@v0.6.0
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        path: main
-        force: true
-
-    - name: Purge CDN Cache
-      run: curl ${{ secrets.CDN_URL }}
+      - name: Commit files
+        run: |
+          git config --local user.email "murongpig@foxmail.com"
+          git config --local user.name "MuRongPIG"
+          git add -A
+          git commit -m "Update Proxies (`date '+%F %H:%M %Z'`)" -a
+          git branch -u origin/main
+          
+      - name: Push changes
+        uses: ad-m/github-push-action@v0.6.0
+        with:
+          github_token: ${{ secrets.TOKEN_GITHUB }}
+          branch: main 
+          force: true
